@@ -2,10 +2,6 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Recursively find all .test.js files
 function findTestFiles(dir) {
@@ -24,7 +20,8 @@ function findTestFiles(dir) {
   return files;
 }
 
-const testDir = join(__dirname, 'test');
+// Use current working directory (where npm is running)
+const testDir = join(process.cwd(), 'test');
 const files = findTestFiles(testDir);
 
 if (files.length === 0) {
