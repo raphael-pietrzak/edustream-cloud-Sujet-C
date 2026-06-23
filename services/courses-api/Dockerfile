@@ -8,6 +8,7 @@ RUN npm install --omit=dev --no-audit --no-fund
 FROM node:26-alpine3.23 AS runner
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 COPY --from=deps /app/node_modules ./node_modules
 COPY src ./src
 COPY package.json ./
