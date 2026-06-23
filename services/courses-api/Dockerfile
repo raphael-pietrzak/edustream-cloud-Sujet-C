@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.7
 # Multi-stage Dockerfile - target image < 250 MB
-FROM node:20-alpine AS deps
+FROM node:26-alpine3.23 AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev --no-audit --no-fund
 
-FROM node:20-alpine AS runner
+FROM node:26-alpine3.23 AS runner
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=deps /app/node_modules ./node_modules
