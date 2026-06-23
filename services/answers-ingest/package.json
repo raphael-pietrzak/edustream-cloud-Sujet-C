@@ -1,0 +1,21 @@
+{
+  "name": "answers-ingest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "lint": "eslint src/ test/"
+  },
+  "dependencies": {
+    "fastify": "^4.28.0",
+    "kafkajs": "^2.2.4",
+    "prom-client": "^15.1.3"
+  },
+  "devDependencies": {
+    "eslint": "^9.9.0"
+  }
+}

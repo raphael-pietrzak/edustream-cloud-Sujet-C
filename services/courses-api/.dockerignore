@@ -1,0 +1,9 @@
+node_modules
+test
+coverage
+.eslintrc*
+.git
+.gitignore
+*.md
+Dockerfile
+.dockerignore

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app
+  labels: { team: edustream, env: dev, "app.kubernetes.io/part-of": edustream }
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data
+  labels: { team: edustream, env: dev, "app.kubernetes.io/part-of": edustream }

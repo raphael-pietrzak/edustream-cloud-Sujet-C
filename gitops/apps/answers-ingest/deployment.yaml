@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: answers-ingest, namespace: app }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: answers-ingest
+  namespace: app
+  labels:
+    app.kubernetes.io/name: answers-ingest
+    app.kubernetes.io/part-of: edustream
+    team: edustream
+    env: dev
+spec:
+  replicas: 1
+  selector: { matchLabels: { app.kubernetes.io/name: answers-ingest } }
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: answers-ingest
+        app.kubernetes.io/part-of: edustream
+        team: edustream
+        env: dev
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3002"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: answers-ingest
+      containers:
+        - name: answers-ingest
+          image: ghcr.io/raphaelpietrzak/edustream/answers-ingest:latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 3002, name: http }]
+          env:
+            - { name: PORT, value: "3002" }
+            - { name: KAFKA_BROKERS, value: redpanda.messaging.svc.cluster.local:9092 }
+            - { name: KAFKA_TOPIC, value: quiz.answers }
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          readinessProbe:
+            httpGet: { path: /ready, port: 3002 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 3002 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata: { name: answers-ingest, namespace: app }
+spec:
+  selector: { app.kubernetes.io/name: answers-ingest }
+  ports: [{ name: http, port: 80, targetPort: 3002 }]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: answers-ingest, namespace: app }
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: answers-ingest
+  minReplicas: 1
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 60 }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: answers-ingest
+  namespace: app
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ingest.edustream.local
+      http:
+        paths:
+          - { path: /, pathType: Prefix, backend: { service: { name: answers-ingest, port: { number: 80 } } } }

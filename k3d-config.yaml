@@ -1,0 +1,27 @@
+# k3d cluster config - profile "Limite" (Mac M1 8 Go RAM)
+# Disable traefik to install our own ingress-nginx
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: edustream
+servers: 1
+agents: 1
+ports:
+  - port: 80:80
+    nodeFilters: [loadbalancer]
+  - port: 443:443
+    nodeFilters: [loadbalancer]
+  - port: 30080:30080
+    nodeFilters: [server:0]   # ArgoCD UI
+  - port: 30090:30090
+    nodeFilters: [server:0]   # Grafana
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters: [server:*]
+      - arg: --disable=servicelb
+        nodeFilters: [server:*]
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true

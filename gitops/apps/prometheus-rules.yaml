@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: edustream-slo
+  namespace: monitoring
+  labels: { release: kps }
+spec:
+  groups:
+    - name: edustream.slo
+      interval: 30s
+      rules:
+        # SLO 1: answers-ingest success rate ≥ 99.5 %
+        - record: slo:answers_ingest:success_rate_1h
+          expr: |
+            sum(rate(http_requests_total{job=~".*answers-ingest.*",status!~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total{job=~".*answers-ingest.*"}[1h]))
+        - alert: AnswersIngestSLOBudgetBurning
+          expr: slo:answers_ingest:success_rate_1h < 0.995
+          for: 5m
+          labels: { severity: warning, slo: answers-ingest-availability }
+          annotations:
+            summary: "answers-ingest success rate below 99.5 %"
+            description: "Current 1h success rate: {{ $value }}"
+
+        # SLO 2: teacher-api latency P95 < 300 ms
+        - record: slo:teacher_api:p95_latency_1h
+          expr: |
+            histogram_quantile(0.95,
+              sum by (le) (rate(http_request_duration_seconds_bucket{job=~".*teacher-api.*"}[1h]))
+            )
+        - alert: TeacherApiLatencyHigh
+          expr: slo:teacher_api:p95_latency_1h > 0.3
+          for: 10m
+          labels: { severity: warning, slo: teacher-api-latency }
+          annotations:
+            summary: "teacher-api P95 latency above 300 ms"
+            description: "Current P95: {{ $value }}s"

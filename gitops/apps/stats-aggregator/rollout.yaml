@@ -1,0 +1,85 @@
+# Argo Rollouts canary: 20% → 50% → 100% with AnalysisTemplate gating.
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: stats-aggregator, namespace: app }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata: { name: success-rate, namespace: app }
+spec:
+  args:
+    - { name: service-name }
+  metrics:
+    - name: success-rate
+      interval: 30s
+      successCondition: result[0] >= 0.95
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://kps-kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(events_consumed_total{outcome="ok",service="{{args.service-name}}"}[1m]))
+            /
+            sum(rate(events_consumed_total{service="{{args.service-name}}"}[1m]))
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: stats-aggregator
+  namespace: app
+  labels:
+    app.kubernetes.io/name: stats-aggregator
+    app.kubernetes.io/part-of: edustream
+    team: edustream
+    env: dev
+spec:
+  replicas: 1
+  strategy:
+    canary:
+      steps:
+        - setWeight: 20
+        - pause: { duration: 60s }
+        - analysis:
+            templates: [{ templateName: success-rate }]
+            args: [{ name: service-name, value: stats-aggregator }]
+        - setWeight: 50
+        - pause: { duration: 60s }
+        - setWeight: 100
+  selector: { matchLabels: { app.kubernetes.io/name: stats-aggregator } }
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stats-aggregator
+        app.kubernetes.io/part-of: edustream
+        team: edustream
+        env: dev
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: stats-aggregator
+      containers:
+        - name: stats-aggregator
+          image: ghcr.io/raphaelpietrzak/edustream/stats-aggregator:latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 3003, name: http }]
+          env:
+            - { name: PORT, value: "3003" }
+            - { name: KAFKA_BROKERS, value: redpanda.messaging.svc.cluster.local:9092 }
+            - { name: KAFKA_TOPIC, value: quiz.answers }
+            - { name: KAFKA_GROUP_ID, value: stats-aggregator-cg }
+            - { name: MONGO_URI, value: mongodb://mongodb.data.svc.cluster.local:27017 }
+            - { name: WINDOW_SECONDS, value: "10" }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 384Mi }
+          readinessProbe: { httpGet: { path: /ready, port: 3003 }, initialDelaySeconds: 5 }
+          livenessProbe:  { httpGet: { path: /health, port: 3003 }, initialDelaySeconds: 10 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: stats-aggregator, namespace: app }
+spec:
+  selector: { app.kubernetes.io/name: stats-aggregator }
+  ports: [{ name: http, port: 80, targetPort: 3003 }]
