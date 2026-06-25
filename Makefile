@@ -21,7 +21,7 @@ platform-install: ## Install ingress, ArgoCD, Redpanda, monitoring, Vault, Kubec
 	./scripts/install-platform.sh
 
 gitops-bootstrap: ## Apply ArgoCD root app
-	kubectl apply -f gitops/bootstrap/root-app.yaml
+	kubectl apply --server-side -f gitops/bootstrap/root-app.yaml
 
 ## Dev
 install: ## npm install in all services

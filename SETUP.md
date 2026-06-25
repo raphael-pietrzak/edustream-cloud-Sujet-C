@@ -1,12 +1,13 @@
 # Setup — reproduire le cluster EduStream
 
-Objectif : un correcteur reproduit le cluster en < 30 min sur Mac/Linux 8 Go RAM.
+Setup sur MacOS.
 
 ## 1. Prérequis
 
 ```bash
-brew install docker kubectl k3d helm terraform argocd trivy k9s
-# Optionnel : kafkajs CLI via rpk
+brew tap hashicorp/tap
+brew install hashicorp/tap/terraform
+brew install docker kubectl k3d helm argocd trivy k9s
 brew install redpanda-data/tap/redpanda
 ```
 

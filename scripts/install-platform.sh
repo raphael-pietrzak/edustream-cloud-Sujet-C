@@ -31,13 +31,13 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 
 step "ArgoCD"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl -n argocd rollout status deploy/argocd-server --timeout=5m
 kubectl -n argocd patch svc argocd-server -p '{"spec":{"type":"NodePort","ports":[{"port":443,"nodePort":30080}]}}' || true
 
 step "Argo Rollouts"
 kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+kubectl apply --server-side --force-conflicts -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
 
 step "kube-prometheus-stack (light)"
 helm upgrade --install kps prometheus-community/kube-prometheus-stack \
@@ -54,7 +54,10 @@ helm upgrade --install loki grafana/loki -n monitoring \
   --set deploymentMode=SingleBinary \
   --set loki.commonConfig.replication_factor=1 \
   --set loki.storage.type=filesystem \
+  --set loki.useTestSchema=true \
+  --set loki.auth_enabled=false \
   --set singleBinary.replicas=1 \
+  --set read.replicas=0 --set write.replicas=0 --set backend.replicas=0 \
   --set chunksCache.enabled=false --set resultsCache.enabled=false
 helm upgrade --install promtail grafana/promtail -n monitoring \
   --set "config.clients[0].url=http://loki:3100/loki/api/v1/push"
@@ -63,8 +66,8 @@ step "Redpanda"
 helm upgrade --install redpanda redpanda/redpanda \
   -n messaging --create-namespace \
   --set statefulset.replicas=1 \
-  --set resources.cpu.cores=1 \
-  --set resources.memory.container.max=1Gi \
+  --set-string resources.cpu.cores=1 \
+  --set resources.memory.container.max=2Gi \
   --set tls.enabled=false --set external.enabled=false --wait --timeout 5m
 
 step "Vault (dev-mode) + External Secrets"
