@@ -1,4 +1,4 @@
-.PHONY: help cluster-up cluster-down platform-install gitops-bootstrap load-test \
+.PHONY: help prereqs cluster-up cluster-down platform-install gitops-bootstrap load-test \
         build test lint docker-build docker-push
 
 SERVICES := courses-api answers-ingest stats-aggregator teacher-api
@@ -8,6 +8,10 @@ TAG ?= dev
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-22s\033[0m %s\n",$$1,$$2}'
+
+## Prérequis
+prereqs: ## Install all CLI prerequisites (detects macOS/Debian/Fedora)
+	./scripts/install-prereqs.sh
 
 ## Cluster
 cluster-up: ## Create k3d cluster

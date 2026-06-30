@@ -1,15 +1,29 @@
 # Setup — reproduire le cluster EduStream
 
-Setup sur MacOS.
+Compatible macOS, Debian/Ubuntu, Fedora/RHEL.
 
 ## 1. Prérequis
 
+```bash
+make prereqs
+```
+
+Détecte l'OS et installe : `docker`, `kubectl`, `k3d`, `helm`, `terraform`,
+`argocd`, `trivy`, `k9s`, `rpk` (redpanda).
+
+<details>
+<summary>Installation manuelle</summary>
+
+**macOS (Homebrew)**
 ```bash
 brew tap hashicorp/tap
 brew install hashicorp/tap/terraform
 brew install docker kubectl k3d helm argocd trivy k9s
 brew install redpanda-data/tap/redpanda
 ```
+
+**Linux** : voir `scripts/install-prereqs.sh` pour le détail des sources officielles.
+</details>
 
 Vérification :
 
