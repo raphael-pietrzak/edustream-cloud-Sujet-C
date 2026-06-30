@@ -80,6 +80,7 @@ helm upgrade --install external-secrets external-secrets/external-secrets \
 step "Kubecost (light)"
 helm upgrade --install kubecost kubecost/cost-analyzer \
   -n kubecost --create-namespace \
+  --set global.clusterId=edustream-local \
   --set kubecostToken="aGVsbS1jaGFydEBrdWJlY29zdC5jb20=xm343yadf98" \
   --set prometheus.kube-state-metrics.disabled=true \
   --set prometheus.nodeExporter.enabled=false
