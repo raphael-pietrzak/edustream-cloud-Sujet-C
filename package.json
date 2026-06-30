@@ -1,0 +1,15 @@
+{
+  "name": "edustream",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev:student": "npm --workspace student-app run dev",
+    "dev:teacher": "npm --workspace teacher-app run dev",
+    "build:apps": "npm --workspace student-app run build && npm --workspace teacher-app run build",
+    "lint:apps": "npm --workspace student-app run lint && npm --workspace teacher-app run lint"
+  }
+}
